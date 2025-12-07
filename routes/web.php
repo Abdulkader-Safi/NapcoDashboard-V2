@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CampaignController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -15,9 +16,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::get('campaign', function () {
-        return Inertia::render('campaign');
-    })->name('campaign');
+    // Route::get('campaign', function () {
+    //     return Inertia::render('campaign');
+    // })->name('campaign');
+
+    Route::get('/campaign', [CampaignController::class, 'index'])->name('campaign.index');
+    Route::get('/campaign/upload', [CampaignController::class, 'upload'])->name('campaign.upload'); // GET page
+    Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store'); // POST upload
+    
 });
 
 require __DIR__ . '/settings.php';
