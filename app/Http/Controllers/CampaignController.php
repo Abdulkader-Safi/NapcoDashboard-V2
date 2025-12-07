@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Campaign;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use Maatwebsite\Excel\Facades\Excel;
 
 // CampaignController.php
 class CampaignController extends Controller
@@ -18,7 +16,7 @@ class CampaignController extends Controller
         $records = Campaign::latest()->get();
 
         return Inertia::render('campaign/index', [
-            'campaignData' => $records
+            'campaignData' => $records,
         ]);
     }
 
@@ -27,18 +25,18 @@ class CampaignController extends Controller
     {
         // dd('upload');
 
-        return Inertia::render('campaign/Upload');
+        return Inertia::render('campaign/upload');
     }
 
     // Handle the actual upload
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
         $file = $request->file('file');
-        dd($file);
+        // dd($file);
         // Read Excel as array
         $sheets = Excel::toArray([], $file);
 
@@ -49,7 +47,7 @@ class CampaignController extends Controller
         $rows = $sheets[0];
 
         // Determine headers from first row
-        $headers = array_map(fn($h) => Str::slug($h, '_'), $rows[0]);
+        $headers = array_map(fn ($h) => Str::slug($h, '_'), $rows[0]);
 
         // Remove header row
         $dataRows = array_slice($rows, 1);

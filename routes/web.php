@@ -23,7 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/campaign', [CampaignController::class, 'index'])->name('campaign.index');
     Route::get('/campaign/upload', [CampaignController::class, 'upload'])->name('campaign.upload'); // GET page
     Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store'); // POST upload
-    
+
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

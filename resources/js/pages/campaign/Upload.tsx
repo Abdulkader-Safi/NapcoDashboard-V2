@@ -1,15 +1,20 @@
-import AppLayout from "@/layouts/app-layout";
-import { useForm } from "@inertiajs/react";
-import { useDropzone } from "react-dropzone";
-import { route } from 'ziggy-js';
+import AppLayout from '@/layouts/app-layout';
+import campaign from '@/routes/campaign';
+import { BreadcrumbItem } from '@/types';
+import { Head, useForm } from '@inertiajs/react';
+import { useDropzone } from 'react-dropzone';
 
-declare const Ziggy: any; // Global Ziggy object injected from Blade
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Campaign', href: campaign.index.url() },
+];
 
-export default function Upload() {
-    const { data, setData, post, progress } = useForm({ file: null });
+export default function CampaignUpload() {
+    const { data, setData, post, progress } = useForm<{ file: File | null }>({
+        file: null,
+    });
 
     const onDrop = (acceptedFiles: File[]) => {
-        setData("file", acceptedFiles[0]);
+        setData('file', acceptedFiles[0]);
     };
 
     const { getRootProps, getInputProps } = useDropzone({ onDrop });
@@ -17,25 +22,25 @@ export default function Upload() {
     const handleUpload = () => {
         if (!data.file) return;
 
-        const formData = new FormData();
-        formData.append('file', data.file);
-
-        post('/campaign/store', formData, {
+        post(campaign.store.url(), {
             preserveScroll: true,
             onSuccess: () => setData('file', null),
             onError: (errors) => console.log(errors),
         });
-
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: "Upload Campaign" }]}>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Upload Campaign" />
+
             <div className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Upload Campaign File</h2>
+                <h2 className="mb-4 text-xl font-semibold">
+                    Upload Campaign File
+                </h2>
 
                 <div
                     {...getRootProps()}
-                    className="border border-dashed p-8 text-center cursor-pointer rounded-lg"
+                    className="cursor-pointer rounded-lg border border-dashed p-8 text-center"
                 >
                     <input {...getInputProps()} />
                     <p>Drag & drop Excel/CSV file here</p>
@@ -45,7 +50,7 @@ export default function Upload() {
 
                 <button
                     onClick={handleUpload}
-                    className="mt-5 bg-blue-600 text-white px-4 py-2 rounded"
+                    className="mt-5 rounded bg-blue-600 px-4 py-2 text-white"
                 >
                     Upload
                 </button>
