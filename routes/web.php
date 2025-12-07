@@ -14,6 +14,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    Route::get('campaign', function () {
+        return Inertia::render('campaign');
+    })->name('campaign');
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
