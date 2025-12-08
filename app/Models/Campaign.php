@@ -9,6 +9,7 @@ class Campaign extends Model
     protected $table = 'campaign_data'; // IMPORTANT
 
     protected $fillable = [
+        'file_name',
         'data',
     ];
 

@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('campaign_data', function (Blueprint $table) {
             $table->id();
-             $table->json("data");
+            $table->string('file_name');
+            $table->json("data");
             $table->timestamps();
         });
     }
