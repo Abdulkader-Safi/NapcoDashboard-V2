@@ -66,6 +66,16 @@ export default function Product({ productData }: ProductProps) {
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date());
   const [selectedRange, setSelectedRange] = useState<DateRange>();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Get unique categories dynamically
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    productData.forEach((row) => {
+      if (row.data.category) set.add(row.data.category);
+    });
+    return Array.from(set).sort();
+  }, [productData]);
 
   const columnNames: Record<string, string> = {
     product_name: "Product Name",
@@ -105,27 +115,31 @@ export default function Product({ productData }: ProductProps) {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  // ✅ Filtered data is passed to table
+  // Filtered data including category filter
   const filteredData = useMemo(() => {
-    if (filterType === "all") return productData;
-
     return productData.filter((row) => {
+      // Filter by category
+      if (selectedCategory !== "all" && row.data.category !== selectedCategory) return false;
+
       const start = row.data.campaign_start_date ? new Date(row.data.campaign_start_date) : null;
       const end = row.data.campaign_end_date ? new Date(row.data.campaign_end_date) : null;
 
       if (!start || !end) return true;
 
+      // Day filter
       if (filterType === "day" && selectedDate) {
         const sel = new Date(selectedDate);
         sel.setHours(0, 0, 0, 0);
         return start <= sel && end >= sel;
       }
 
+      // Month filter
       if (filterType === "month" && selectedMonth) {
         return start.getMonth() === selectedMonth.getMonth() &&
                start.getFullYear() === selectedMonth.getFullYear();
       }
 
+      // Range filter
       if (filterType === "range" && selectedRange?.from && selectedRange?.to) {
         const { from, to } = selectedRange;
         return start >= from && end <= to;
@@ -133,10 +147,10 @@ export default function Product({ productData }: ProductProps) {
 
       return true;
     });
-  }, [productData, filterType, selectedDate, selectedMonth, selectedRange]);
+  }, [productData, filterType, selectedDate, selectedMonth, selectedRange, selectedCategory]);
 
   const table = useReactTable({
-    data: filteredData, // ✅ filtered data
+    data: filteredData,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -196,6 +210,18 @@ export default function Product({ productData }: ProductProps) {
 
         {/* Filter bar */}
         <div className="mb-4 flex items-center gap-4">
+          {/* Category Filter */}
+          <div className="w-36">
+            <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value)}>
+              <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Day Filter */}
           <div className="w-36">
             <Select value={filterType} onValueChange={(value) => setFilterType(value as FilterType)}>
               <SelectTrigger><SelectValue placeholder="Select Filter" /></SelectTrigger>
