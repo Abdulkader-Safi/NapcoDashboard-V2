@@ -10,7 +10,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, campaign } from '@/routes';
+import { dashboard } from '@/routes';
+import campaign from '@/routes/campaign';
+import product from '@/routes/product';
+import keyword from '@/routes/keywords';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { Megaphone, BookOpen, Folder, LayoutGrid } from 'lucide-react';
@@ -24,9 +27,20 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Campaign',
-        href: campaign(),
+        href: campaign.index.url(),
         icon: Megaphone,
     },
+    {
+        title: 'Products',      
+        href: product.index.url(),  
+        icon: BookOpen,           
+    },
+    {
+        title: 'Keywords',      
+        href: keyword.index.url(),  
+        icon: BookOpen,           
+    },
+   
 ];
 
 const footerNavItems: NavItem[] = [
