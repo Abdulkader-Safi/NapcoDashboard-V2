@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import campaign from '@/routes/campaign';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { flexRender } from '@tanstack/react-table';
 import {
     Table,
@@ -21,45 +20,46 @@ import {
 } from '@tanstack/react-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Campaign', href: campaign.index.url() },
+    { title: 'keywords', href: '/keywords' },
 ];
 
-interface CampaignProps {
-    campaignData: {
+interface KeywordProps {
+    keywordData: {
         id: string;
-        file_name?: string;
         data: Record<string, any>;
     }[];
 }
 
-export default function Campaign({ campaignData }: CampaignProps) {
-    // Show upload button if no data
-    if (campaignData.length === 0) {
-        return (
-            <AppLayout breadcrumbs={breadcrumbs}>
-                <Head title="Campaign" />
-                <div className="p-6 mt-10 rounded-lg border border-dashed text-center">
-                    <p className="mb-4 text-gray-500">No campaign data found.</p>
-                    <Link
-                        href={campaign.upload.url()}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    >
-                        Upload Your First File
-                    </Link>
-                </div>
-            </AppLayout>
-        );
+// Helper to assign color per category
+const categoryColors: Record<string, string> = {};
+const getCategoryColor = (category: string) => {
+    if (!category) return 'bg-gray-100';
+    if (!categoryColors[category]) {
+        const colors = [
+            'bg-red-200',
+            'bg-green-200',
+            'bg-blue-200',
+            'bg-yellow-200',
+            'bg-purple-200',
+            'bg-pink-200',
+            'bg-orange-200',
+        ];
+        categoryColors[category] = colors[Object.keys(categoryColors).length % colors.length];
     }
+    return categoryColors[category];
+};
 
+export default function Keyword({ keywordData }: KeywordProps) {
     const columnNames: Record<string, string> = {
-        campaign_name: 'Campaign Name',
-        roas: 'Average ROAS',
+        keyword_name: 'Keyword',
+        category: 'Category',
+        total_clicks: 'Total Clicks',
+        impressions: 'Impressions',
+        ctr: 'CTR',
+        average_roas: 'Average ROAS',
+        total_revenue: 'Total Revenue',
         product_count: 'Products',
-        campaign_start_date: 'Start Date',
-        campaign_end_date: 'End Date',
-        sales_revenue: 'Total Revenue',
-        clicks: 'Total Clicks',
-        orders: 'Orders',
+        avg_cpc: 'Avg CPC',
     };
 
     const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
@@ -71,28 +71,39 @@ export default function Campaign({ campaignData }: CampaignProps) {
             cell: (info) => {
                 const value = info.getValue();
 
-                // Product count
-                if (key === 'product_count') return value ?? 0;
-
-                // Format numbers and ROAS with single dark blue background
-                if (['roas', 'sales_revenue'].includes(key)) {
-                    const numValue = value ? Number(value).toFixed(2) : '0';
-
-                    // Single dark blue background for ROAS
-                    if (key === 'roas') {
-                        return (
-                            <div className="px-2 py-1 rounded text-center bg-blue-700 text-white">
-                                {numValue}
-                            </div>
-                        );
-                    }
-
-                    // Sales Revenue can stay normal
-                    return numValue;
+                // Average ROAS highlight
+                if (key === 'average_roas') {
+                    const bgColor = value && value > 0 ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700';
+                    return (
+                        <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
+                            {value && value > 0 ? Number(value).toFixed(2) + '%' : '0%'}
+                        </div>
+                    );
                 }
 
+                // Category color
+                if (key === 'category') {
+                    const bgColor = getCategoryColor(value);
+                    return (
+                        <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
+                            {value ?? '-'}
+                        </div>
+                    );
+                }
 
-                // Default
+                // Currency formatting
+                if (key === 'total_revenue' || key === 'avg_cpc') {
+                    return value ? Number(value).toFixed(2) + ' KWD' : '0 KWD';
+                }
+
+                // CTR display
+                if (key === 'ctr') return value ?? '0%';
+
+                // Numbers
+                if (['total_clicks', 'orders', 'impressions', 'campaigns', 'product_count'].includes(key)) {
+                    return value ?? 0;
+                }
+
                 return value ?? '-';
             },
         })
@@ -101,7 +112,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const table = useReactTable({
-        data: campaignData,
+        data: keywordData,
         columns,
         state: { sorting },
         onSortingChange: setSorting,
@@ -111,18 +122,10 @@ export default function Campaign({ campaignData }: CampaignProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Campaign" />
+            <Head title="keywords" />
             <div className="p-6">
                 <div className="mb-4 flex items-center justify-between">
-                    <h1 className="text-xl font-semibold">Campaign Records</h1>
-                    {campaignData.length > 0 && (
-                        <Link
-                            href={campaign.upload.url()}
-                            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                        >
-                            Upload Campaign File
-                        </Link>
-                    )}
+                    <h1 className="text-xl font-semibold">Keyword Records</h1>
                 </div>
 
                 <div className="overflow-x-auto border rounded-md">
@@ -132,7 +135,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {
                                         if (header.isPlaceholder) return <TableHead key={header.id} />;
-                                        const isSorted = header.column.getIsSorted();
+                                        const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
                                         return (
                                             <TableHead key={header.id}>
                                                 <button
@@ -150,6 +153,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
                                 </TableRow>
                             ))}
                         </TableHeader>
+
 
                         <TableBody>
                             {table.getRowModel().rows.map((row) => (

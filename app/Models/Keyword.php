@@ -28,6 +28,6 @@ class Keyword extends Model
     // Relation with ad performance
     public function adPerformances()
     {
-        return $this->hasMany(AdPerformance::class, 'keyword_id');
+        return $this->hasMany(AdPerformance::class, 'keyword_id', 'keyword_id');
     }
 }

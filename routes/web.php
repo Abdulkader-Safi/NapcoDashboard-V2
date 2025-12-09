@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UploadDataController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store'); // POST upload
 
     Route::get('/products', [ProductController::class, 'index'])->name('product.index');
+    Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
   
 });
 
