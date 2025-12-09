@@ -34,6 +34,9 @@ class KeywordController extends Controller
                         'impressions' => 0,
                         'product_count' => 0,
                         'avg_cpc' => 0,
+                        // ✅ Add these for filtering
+                        'campaign_start_date' => null,
+                        'campaign_end_date' => null,
                     ],
                 ];
             }
@@ -54,8 +57,12 @@ class KeywordController extends Controller
             $averageCtr = $performances->avg('ctr') ? round($performances->avg('ctr'), 2) . '%' : '0%';
             $averageCvr = $performances->avg('cvr') ? round($performances->avg('cvr'), 2) . '%' : '0%';
 
+            // ✅ Determine campaign start/end dates for the keyword
+            $startDate = $performances->min(fn($p) => $p->campaign->campaign_start_date ?? null);
+            $endDate   = $performances->max(fn($p) => $p->campaign->campaign_end_date ?? null);
+
             return [
-                'id' => $keyword->keyword_id,
+                'id' => $keyword->id,
                 'data' => [
                     'keyword_name' => $keyword->keyword,
                     'category' => $categoryDisplay,
@@ -69,6 +76,8 @@ class KeywordController extends Controller
                     'impressions' => $totalImpressions,
                     'product_count' => count($products),
                     'avg_cpc' => $avgCpc ? number_format($avgCpc, 2) : 0,
+                    'campaign_start_date' => $startDate,
+                    'campaign_end_date' => $endDate,
                 ],
             ];
         });

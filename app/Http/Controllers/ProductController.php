@@ -31,6 +31,8 @@ class ProductController extends Controller
                         'orders' => 0,
                         'ctr' => '0%',
                         'cvr' => '0%',
+                        'campaign_start_date' => null,
+                        'campaign_end_date' => null,
                     ],
                 ];
             }
@@ -50,6 +52,10 @@ class ProductController extends Controller
             $averageCtr = $performances->avg('ctr') ? round($performances->avg('ctr'), 2) . '%' : '0%';
             $averageCvr = $performances->avg('cvr') ? round($performances->avg('cvr'), 2) . '%' : '0%';
 
+            // ✅ Set campaign start and end dates for this product
+            $startDate = $performances->min(fn($p) => $p->campaign->campaign_start_date ?? null);
+            $endDate   = $performances->max(fn($p) => $p->campaign->campaign_end_date ?? null);
+
             return [
                 'id' => $product->product_id,
                 'data' => [
@@ -62,9 +68,12 @@ class ProductController extends Controller
                     'orders' => $totalOrders,
                     'ctr' => $averageCtr,
                     'cvr' => $averageCvr,
+                    'campaign_start_date' => $startDate,
+                    'campaign_end_date' => $endDate,
                 ],
             ];
         });
+
         // Return to Inertia view
         return Inertia::render('product', [
             'productData' => $productData,

@@ -74,8 +74,6 @@ class CampaignController extends Controller
     }
 
 
-
-
     // Show the upload page
     public function upload()
     {
@@ -132,9 +130,13 @@ class CampaignController extends Controller
             // -----------------------------------------------------------------------------------
             $campaign = null;
             if (!empty($rowData['campaign_name'])) {
+
+                // Clean campaign name: remove everything after '('
+                $cleanName = trim(explode('(', $rowData['campaign_name'])[0]);
+
                 $campaign = Campaign::firstOrCreate(
                     [
-                        'campaign_name' => $rowData['campaign_name'],
+                        'campaign_name' => $cleanName,
                         'campaign_id' => $rowData['campaign_id']
                     ],
                     [
@@ -144,6 +146,7 @@ class CampaignController extends Controller
                     ]
                 );
             }
+
 
             // Decide based on asset_type
             $isListing = !empty($rowData['asset_type']) && $rowData['asset_type'] === 'AD_TYPE_LISTING';
@@ -220,49 +223,4 @@ class CampaignController extends Controller
         return redirect()->route('campaign.index')
             ->with('success', 'Excel imported successfully.');
     }
-
-
-    // public function store(Request $request)
-    // {
-    //     $request->validate([
-    //         'file' => 'required|mimes:xlsx,xls,csv',
-    //     ]);
-
-    //     $file = $request->file('file');
-    //     $fileName = $file->getClientOriginalName();
-
-    //     $sheets = Excel::toArray([], $file);
-
-    //     if (empty($sheets) || count($sheets[0]) < 1) {
-    //         return back()->with('error', 'Excel file is empty.');
-    //     }
-
-    //     $rows = $sheets[0];
-    //     $headers = array_map(fn($h) => \Str::slug(trim($h), '_'), $rows[0]);
-    //     $dataRows = array_slice($rows, 1);
-
-    //     // Get existing columns in the table
-    //     $existingColumns = Schema::getColumnListing('upload_data');
-
-    //     // Add missing columns dynamically
-    //     Schema::table('upload_data', function (Blueprint $table) use ($headers, $existingColumns) {
-    //         foreach ($headers as $header) {
-    //             if (!in_array($header, $existingColumns)) {
-    //                 $table->text($header)->nullable();
-    //             }
-    //         }
-    //     });
-
-    //     // Insert data row by row
-    //     foreach ($dataRows as $row) {
-    //         $record = ['file_name' => $fileName];
-    //         foreach ($headers as $index => $column) {
-    //             $record[$column] = $row[$index] ?? null;
-    //         }
-    //         \App\Models\UploadData::create($record);
-    //     }
-
-    //     return redirect()->route('campaign.index')
-    //         ->with('success', 'Imported successfully.');
-    // }
 }
