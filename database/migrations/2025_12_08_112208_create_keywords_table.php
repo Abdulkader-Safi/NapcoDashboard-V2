@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('keywords', function (Blueprint $table) {
-            $table->id();
-             $table->string('keyword_id')->nullable();
+            $table->id('keyword_id');
             $table->string('keyword')->nullable();
             $table->timestamps();
         });

@@ -9,6 +9,8 @@ class Campaign extends Model
 {
     use HasFactory;
 
+    public $incrementing = false; // varchar PK
+    protected $keyType = 'string';
     protected $fillable = [
         'campaign_id',
         'campaign_name',
@@ -42,6 +44,6 @@ class Campaign extends Model
     // Relation with AdPerformance
     public function adPerformances()
     {
-        return $this->hasMany(AdPerformance::class, 'campaign_id');
+         return $this->hasMany(AdPerformance::class, 'campaign_id', 'campaign_id');
     }
 }

@@ -35,7 +35,7 @@ class AdPerformance extends Model
     // Relationships
     public function product()
     {
-        return $this->belongsTo(Product::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
     public function vendor()
@@ -45,7 +45,7 @@ class AdPerformance extends Model
 
     public function campaign()
     {
-        return $this->belongsTo(Campaign::class, 'campaign_id');
+        return $this->belongsTo(Campaign::class, 'campaign_id', 'campaign_id');
     }
 
     public function keyword()
@@ -55,7 +55,6 @@ class AdPerformance extends Model
 
     public function category()
     {
-        return $this->belongsTo(Category::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 }
-

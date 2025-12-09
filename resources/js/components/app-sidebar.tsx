@@ -28,6 +28,12 @@ const mainNavItems: NavItem[] = [
         href: campaign.index.url(),
         icon: Megaphone,
     },
+    {
+        title: 'Products',      
+        href: '/products',  
+        icon: BookOpen,           
+    },
+   
 ];
 
 const footerNavItems: NavItem[] = [

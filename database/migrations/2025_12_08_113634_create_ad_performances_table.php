@@ -20,9 +20,9 @@ return new class extends Migration
             // Foreign Keys (nullable as per ERD)
             $table->string('product_id')->nullable();
             $table->string('vendor_id')->nullable();
-            $table->unsignedBigInteger('campaign_id')->nullable();
-            $table->unsignedBigInteger('keyword_id')->nullable();  // NULL for LISTING
-            $table->unsignedBigInteger('category_id')->nullable(); // NULL for SEARCH
+            $table->string('campaign_id')->nullable();
+            $table->string('keyword_id')->nullable();  // NULL for LISTING
+            $table->string('category_id')->nullable(); // NULL for SEARCH
 
             // Metrics
             $table->integer('impressions')->nullable();

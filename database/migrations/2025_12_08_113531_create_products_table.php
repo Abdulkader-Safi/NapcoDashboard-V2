@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('product_id')->nullable(); // PK (varchar)
+            $table->string('product_id')->primary();
             $table->string('product_name')->nullable();
             $table->timestamps();
         });

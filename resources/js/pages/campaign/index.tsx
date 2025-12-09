@@ -10,13 +10,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface CampaignProps {
     campaignData: {
-        id: number;
-        file_name: string;
+        id: string;
+        file_name?: string;
         data: Record<string, any>;
     }[];
 }
 
 export default function Campaign({ campaignData }: CampaignProps) {
+    // Show upload button only if no data
     if (campaignData.length === 0) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
@@ -34,38 +35,55 @@ export default function Campaign({ campaignData }: CampaignProps) {
         );
     }
 
-    const firstRow = campaignData[0].data;
-
-    // Custom headers mapping
+    // Column mapping for DataTable
     const columnNames: Record<string, string> = {
         campaign_name: 'Campaign Name',
         roas: 'Average ROAS',
-        product_name: 'Products',
+        product_count: 'Products',
         campaign_start_date: 'Start Date',
         campaign_end_date: 'End Date',
         sales_revenue: 'Total Revenue',
-        click: 'Total Clicks',
+        clicks: 'Total Clicks',
         orders: 'Orders',
     };
 
-    const columns = [
-        ...Object.keys(columnNames).map((key) => ({
-            name: columnNames[key],
-            selector: (row: any) => {
-                if (key === 'product_name') {
-                    const products = row.data[key];
-                    if (!products) return 0;
+    const columns = Object.keys(columnNames).map((key) => ({
+        name: columnNames[key],
+        selector: (row: any) => row.data[key] ?? '-',
+        sortable: true,
+        wrap: true,
+        cell: (row: any) => {
+            const value = row.data[key];
 
-                    if (Array.isArray(products)) return products.length;
+            // Show product count
+            if (key === 'product_count') {
+                return value ?? 0;
+            }
 
-                    return products.toString().split(',').length;
+            // Format numbers
+            if (['roas', 'sales_revenue'].includes(key)) {
+                const numValue = value ? Number(value).toFixed(2) : '0';
+
+                // Colored background for ROAS
+                if (key === 'roas') {
+                    let bgColor = 'bg-gray-100';
+                    if (value >= 150) bgColor = 'bg-green-300';
+                    else if (value >= 100) bgColor = 'bg-yellow-300';
+                    else if (value > 0) bgColor = 'bg-red-300';
+
+                    return (
+                        <div className={`px-2 py-1 rounded ${bgColor} text-center`}>
+                            {numValue}
+                        </div>
+                    );
                 }
-                return row.data[key] ?? '-';
-            },
-            sortable: true,
-            wrap: true,
-        })),
-    ];
+
+                return numValue;
+            }
+
+            return value ?? '-';
+        },
+    }));
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -73,12 +91,15 @@ export default function Campaign({ campaignData }: CampaignProps) {
             <div className="p-6">
                 <div className="mb-4 flex items-center justify-between">
                     <h1 className="text-xl font-semibold">Campaign Records</h1>
-                    <Link
-                        href={campaign.upload.url()}
-                        className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                    >
-                        Upload Campaign File
-                    </Link>
+                    {/* Hide upload button if data exists */}
+                    {campaignData.length === 0 ? null : (
+                        <Link
+                            href={campaign.upload.url()}
+                            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                        >
+                            Upload Campaign File
+                        </Link>
+                    )}
                 </div>
 
                 <DataTable
@@ -87,7 +108,6 @@ export default function Campaign({ campaignData }: CampaignProps) {
                     pagination
                     highlightOnHover
                     dense
-                    defaultSortField="ID"
                     responsive
                 />
             </div>

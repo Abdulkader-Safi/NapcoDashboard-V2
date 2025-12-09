@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vendors', function (Blueprint $table) {
-            $table->id();
-            $table->string('vendor_id')->nullable(); // Vendor ID (varchar, PK)
+            $table->string('vendor_id')->primary(); // Vendor ID (varchar, PK)
             $table->string('vendor_name')->nullable();
             $table->timestamps();
         });

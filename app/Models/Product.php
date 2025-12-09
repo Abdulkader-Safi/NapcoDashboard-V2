@@ -9,7 +9,6 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'product_id';
     public $incrementing = false; // varchar PK
     protected $keyType = 'string';
 
@@ -21,7 +20,7 @@ class Product extends Model
     // One-to-many: product → ad performance
     public function adPerformances()
     {
-        return $this->hasMany(AdPerformance::class, 'product_id');
+        return $this->hasMany(AdPerformance::class, 'product_id', 'product_id');
     }
 }
 

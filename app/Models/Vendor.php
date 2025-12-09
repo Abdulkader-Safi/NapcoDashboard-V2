@@ -9,7 +9,6 @@ class Vendor extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'vendor_id';
     public $incrementing = false;
     protected $keyType = 'string';
 

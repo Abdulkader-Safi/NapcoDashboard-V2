@@ -9,8 +9,8 @@ class Keyword extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'keyword_id';
     protected $fillable = [
-        'keyword_id',
         'keyword'
     ];
 
