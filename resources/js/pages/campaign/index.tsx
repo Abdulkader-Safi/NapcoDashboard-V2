@@ -39,11 +39,12 @@ interface CampaignProps {
     file_name?: string;
     data: Record<string, any>;
   }[];
+  updatedCampaigns?: Record<string, string>; // new prop
 }
 
 type FilterType = "all" | "day" | "month" | "range";
 
-export default function Campaign({ campaignData }: CampaignProps) {
+export default function Campaign({ campaignData, updatedCampaigns }: CampaignProps) {
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date());
@@ -88,7 +89,6 @@ export default function Campaign({ campaignData }: CampaignProps) {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  // ✅ Fixed filteredData
   const filteredData = useMemo(() => {
     if (filterType === "all") return campaignData;
 
@@ -118,7 +118,6 @@ export default function Campaign({ campaignData }: CampaignProps) {
     });
   }, [campaignData, filterType, selectedDate, selectedMonth, selectedRange]);
 
-  // Table
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -145,13 +144,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
     );
   }
 
-  const MonthPicker = ({
-    selectedMonth,
-    onSelect,
-  }: {
-    selectedMonth?: Date;
-    onSelect: (date: Date) => void;
-  }) => {
+  const MonthPicker = ({ selectedMonth, onSelect }: { selectedMonth?: Date; onSelect: (date: Date) => void; }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
     const [year, setYear] = useState(selectedMonth?.getFullYear() || currentYear);
@@ -169,9 +162,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
           onChange={(e) => setYear(Number(e.target.value))}
         >
           {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
+            <option key={y} value={y}>{y}</option>
           ))}
         </select>
 
@@ -225,6 +216,20 @@ export default function Campaign({ campaignData }: CampaignProps) {
           )}
         </div>
 
+        {/* Recently Updated Campaigns */}
+        {updatedCampaigns && Object.keys(updatedCampaigns).length > 0 && (
+          <div className="mb-4 p-4 border rounded bg-green-50">
+            <h4 className="font-semibold mb-2">Recently Updated Campaigns:</h4>
+            <ul className="list-disc list-inside">
+              {Object.entries(updatedCampaigns).map(([id, name]) => (
+                <li key={id}>
+                  {name} (ID: {id})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Filter bar */}
         <div className="mb-4 flex items-center gap-4">
           <div className="w-36">
@@ -244,7 +249,7 @@ export default function Campaign({ campaignData }: CampaignProps) {
             </Select>
           </div>
 
-          {/* DAY FILTER */}
+          {/* Day Filter */}
           {filterType === "day" && (
             <Popover>
               <PopoverTrigger asChild>
@@ -263,29 +268,23 @@ export default function Campaign({ campaignData }: CampaignProps) {
             </Popover>
           )}
 
-          {/* MONTH FILTER */}
+          {/* Month Filter */}
           {filterType === "month" && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button className="w-48">
                   {selectedMonth
-                    ? selectedMonth.toLocaleString("default", {
-                      month: "long",
-                      year: "numeric",
-                    })
+                    ? selectedMonth.toLocaleString("default", { month: "long", year: "numeric" })
                     : "Select Month"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
-                <MonthPicker
-                  selectedMonth={selectedMonth}
-                  onSelect={(date) => setSelectedMonth(date)}
-                />
+                <MonthPicker selectedMonth={selectedMonth} onSelect={(date) => setSelectedMonth(date)} />
               </PopoverContent>
             </Popover>
           )}
 
-          {/* RANGE FILTER */}
+          {/* Range Filter */}
           {filterType === "range" && (
             <Popover>
               <PopoverTrigger asChild>

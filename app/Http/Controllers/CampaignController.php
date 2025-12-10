@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\FastAdPerformanceImport;
 use App\Models\Campaign;
 use App\Models\UploadData;
 use Illuminate\Http\Request;
@@ -80,147 +81,19 @@ class CampaignController extends Controller
         return Inertia::render('campaign/Upload');
     }
 
-
-
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv',
+            'file' => 'required|mimes:xlsx,xls,csv'
         ]);
 
-        $file = $request->file('file');
-        $sheets = Excel::toArray([], $file);
+        Excel::queueImport(new FastAdPerformanceImport, $request->file('file'));
 
-        if (empty($sheets) || count($sheets[0]) < 1) {
-            return back()->with('error', 'Excel file is empty.');
-        }
-
-        $rows = $sheets[0];
-
-        // Normalize headers
-        $headers = array_map(fn($h) => Str::slug(trim($h), '_'), $rows[0]);
-        $dataRows = array_slice($rows, 1);
-
-        foreach ($dataRows as $row) {
-            $rowData = array_combine($headers, $row);
-            // -----------------------------------------------------------------------------------
-            // 1️⃣ Vendor
-            // -----------------------------------------------------------------------------------
-            $vendor = null;
-            if (!empty($rowData['vendor_id'])) {
-                $vendor = Vendor::firstOrCreate(
-                    ['vendor_id' => $rowData['vendor_id']],
-                    ['vendor_name' => $rowData['vendor_name'] ?? null]
-                );
-            }
-
-            // -----------------------------------------------------------------------------------
-            // 2️⃣ Product
-            // -----------------------------------------------------------------------------------
-            $product = null;
-            if (!empty($rowData['product_id'])) {
-                $product = Product::firstOrCreate(
-                    ['product_id' => $rowData['product_id']],
-                    ['product_name' => $rowData['product_name'] ?? null]
-                );
-            }
-
-            // -----------------------------------------------------------------------------------
-            // 3️⃣ Campaign
-            // -----------------------------------------------------------------------------------
-            $campaign = null;
-            if (!empty($rowData['campaign_name'])) {
-
-                // Clean campaign name: remove everything after '('
-                $cleanName = trim(explode('(', $rowData['campaign_name'])[0]);
-
-                $campaign = Campaign::firstOrCreate(
-                    [
-                        'campaign_name' => $cleanName,
-                        'campaign_id' => $rowData['campaign_id']
-                    ],
-                    [
-                        'campaign_type' => $rowData['asset_type'] === 'AD_TYPE_SEARCH' ? 'SEARCH' : 'LISTING',
-                        'campaign_start_date' => $rowData['campaign_start_date'] ?? null,
-                        'campaign_end_date' => $rowData['campaign_end_date'] ?? null,
-                    ]
-                );
-            }
-
-
-            // Decide based on asset_type
-            $isListing = !empty($rowData['asset_type']) && $rowData['asset_type'] === 'AD_TYPE_LISTING';
-            $isSearch  = !empty($rowData['asset_type']) && $rowData['asset_type'] === 'AD_TYPE_SEARCH';
-
-            // -----------------------------------------------------------------------------------
-            // 4️⃣ IF LISTING → save category
-            // -----------------------------------------------------------------------------------
-            $categoryId = null;
-            if ($isListing && !empty($rowData['category_name_l2'])) {
-
-                $category = Category::firstOrCreate(
-                    [
-                        'category_id' => $rowData['category_id'],
-                        'category_name' => $rowData['category_name_l2'],
-                    ]
-                );
-
-                // Link campaign <-> category
-                if ($campaign) {
-                    $campaign->categories()->syncWithoutDetaching([$category->category_id]);
-                }
-
-                $categoryId = $category->category_id;
-            }
-
-            // -----------------------------------------------------------------------------------
-            // 5️⃣ IF SEARCH → save keyword
-            // -----------------------------------------------------------------------------------
-            $keywordId = null;
-            if ($isSearch && !empty($rowData['keyword'])) {
-
-                $keyword = Keyword::firstOrCreate(
-                    [
-                        'keyword' => $rowData['keyword'],
-                    ]
-                );
-
-                if ($campaign) {
-                    $campaign->keywords()->syncWithoutDetaching([$keyword->keyword_id]);
-                }
-
-                $keywordId = $keyword->keyword_id;
-            }
-
-            // -----------------------------------------------------------------------------------
-            // 6️⃣ Ad Performance SAVE — Correct FKs
-            // -----------------------------------------------------------------------------------
-            AdPerformance::create([
-                'date' => $rowData['date'] ?? null,
-
-                'product_id'   => $product?->product_id,
-                'vendor_id'    => $vendor?->vendor_id,
-                'campaign_id'  => $campaign?->campaign_id,
-
-                'category_id'  => $categoryId,   // only filled for LISTING
-                'keyword_id'   => $keywordId,    // only filled for SEARCH
-
-                'impressions' => $rowData['impressions'] ?? null,
-                'clicks' => $rowData['clicks'] ?? null,
-                'orders' => $rowData['orders'] ?? null,
-                'unit_sold' => $rowData['unit_sold'] ?? null,
-                'ctr' => $rowData['ctr'] ?? null,
-                'cvr' => $rowData['cvr'] ?? null,
-                'avg_ad_position' => $rowData['average_ad_position'] ?? null,
-                'sales_revenue' => $rowData['sales_revenue'] ?? null,
-                'total_ad_spend' => $rowData['total_ad_spend'] ?? null,
-                'cpa' => $rowData['cpa'] ?? null,
-                'cpc' => $rowData['cpc'] ?? null,
-                'roas' => $rowData['roas'] ?? null,
-            ]);
-        } // end foreach
+        $updatedCampaigns = Campaign::where('updated_at', '>=', now()->subMinutes(1))
+            ->pluck('campaign_name', 'campaign_id');
 
         return redirect()->route('campaign.index')
-            ->with('success', 'Excel imported successfully.');
+            ->with('success', 'File uploaded and is being processed in background.')
+            ->with('updatedCampaigns', $updatedCampaigns->toArray());
     }
 }
