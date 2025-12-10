@@ -70,22 +70,36 @@ export default function Campaign({ campaignData, updatedCampaigns }: CampaignPro
       header: columnNames[key],
       cell: (info) => {
         const value = info.getValue();
+
         if (key === "product_count") return value ?? 0;
+
         if (["roas", "sales_revenue"].includes(key)) {
           const numValue = value ? Number(value).toFixed(2) : "0";
+
           if (key === "roas") {
             return (
               <div className="px-2 py-1 rounded text-center bg-blue-700 text-white">
-                {numValue}
+                {numValue} %
               </div>
             );
           }
+
+          if (key === "sales_revenue") {
+            return (
+              <div className="px-2 py-1 text-right">
+                {numValue} KWD
+              </div>
+            );
+          }
+
           return numValue;
         }
+
         return value ?? "-";
       },
     })
   );
+
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -106,7 +120,7 @@ export default function Campaign({ campaignData, updatedCampaigns }: CampaignPro
 
       if (filterType === "month" && selectedMonth) {
         return start.getMonth() === selectedMonth.getMonth() &&
-               start.getFullYear() === selectedMonth.getFullYear();
+          start.getFullYear() === selectedMonth.getFullYear();
       }
 
       if (filterType === "range" && selectedRange?.from && selectedRange?.to) {
