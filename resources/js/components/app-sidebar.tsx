@@ -38,7 +38,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Keywords',      
         href: keyword.index.url(),  
-        icon: BookOpen,           
+        icon: Folder,           
     },
    
 ];
