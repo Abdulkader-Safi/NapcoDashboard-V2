@@ -74,12 +74,15 @@ export default function Campaign({ campaignData, updatedCampaigns }: CampaignPro
         if (key === "product_count") return value ?? 0;
 
         if (["roas", "sales_revenue"].includes(key)) {
-          const numValue = value ? Number(value).toFixed(2) : "0";
+          const numericValue = value ? Number(value) : 0; // keep as number
+          const numDisplay = numericValue.toFixed(2);     // string for display
 
           if (key === "roas") {
+            const bgColor = numericValue > 0 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-700";
+
             return (
-              <div className="px-2 py-1 rounded text-center bg-blue-700 text-white">
-                {numValue} %
+              <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
+                {numericValue > 0 ? `${numDisplay}%` : "0%"}
               </div>
             );
           }
@@ -87,13 +90,14 @@ export default function Campaign({ campaignData, updatedCampaigns }: CampaignPro
           if (key === "sales_revenue") {
             return (
               <div className="px-2 py-1 text-right">
-                {numValue} KWD
+                {numDisplay} KWD
               </div>
             );
           }
 
-          return numValue;
+          return numDisplay;
         }
+
 
         return value ?? "-";
       },
