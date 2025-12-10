@@ -18,10 +18,10 @@ use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class FastAdPerformanceImport implements 
-    OnEachRow, 
-    WithHeadingRow, 
-    WithChunkReading, 
+class FastAdPerformanceImport implements
+    OnEachRow,
+    WithHeadingRow,
+    WithChunkReading,
     ShouldQueue
 {
     protected array $vendors = [];
@@ -57,7 +57,7 @@ class FastAdPerformanceImport implements
 
         // ---------------- Vendor ----------------
         if (!empty($rowData['vendor_id']) && !isset($this->vendors[$rowData['vendor_id']])) {
-            Vendor::insertOrIgnore([[ 
+            Vendor::insertOrIgnore([[
                 'vendor_id' => $rowData['vendor_id'],
                 'vendor_name' => $rowData['vendor_name'] ?? null,
                 'created_at' => $now,
@@ -68,7 +68,7 @@ class FastAdPerformanceImport implements
 
         // ---------------- Product ----------------
         if (!empty($rowData['product_id']) && !isset($this->products[$rowData['product_id']])) {
-            Product::insertOrIgnore([[ 
+            Product::insertOrIgnore([[
                 'product_id' => $rowData['product_id'],
                 'product_name' => $rowData['product_name'] ?? null,
                 'created_at' => $now,
@@ -82,7 +82,7 @@ class FastAdPerformanceImport implements
         if (!empty($campaignId) && !isset($this->campaigns[$campaignId])) {
             $cleanName = trim(explode('(', $rowData['campaign_name'])[0]);
 
-            Campaign::insertOrIgnore([[ 
+            Campaign::insertOrIgnore([[
                 'campaign_id' => $campaignId,
                 'campaign_name' => $cleanName,
                 'campaign_type' => $rowData['asset_type'] === 'AD_TYPE_SEARCH' ? 'SEARCH' : 'LISTING',
@@ -101,7 +101,7 @@ class FastAdPerformanceImport implements
         // ---------------- Category ----------------
         $categoryId = null;
         if (!empty($rowData['category_id']) && !isset($this->categories[$rowData['category_id']])) {
-            Category::insertOrIgnore([[ 
+            Category::insertOrIgnore([[
                 'category_id' => $rowData['category_id'],
                 'category_name' => $rowData['category_name_l2'] ?? null,
                 'created_at' => $now,
@@ -113,15 +113,15 @@ class FastAdPerformanceImport implements
 
         // ---------------- Keyword ----------------
         $keywordId = null;
-        if (!empty($rowData['keyword']) && !isset($this->keywords[$rowData['keyword']])) {
-            Keyword::insertOrIgnore([[ 
-                'keyword' => $rowData['keyword'],
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]]);
+        if (!empty($rowData['keyword'])) {
+            $keyword = Keyword::firstOrCreate(
+                ['keyword' => $rowData['keyword']],
+                ['created_at' => $now, 'updated_at' => $now]
+            );
+            $keywordId = $keyword->keyword_id; // ✅ get the actual ID
             $this->keywords[$rowData['keyword']] = true;
         }
-        $keywordId = $rowData['keyword'] ?? null;
+
 
         // ---------------- Batch AdPerformance ----------------
         $this->batch[] = [
