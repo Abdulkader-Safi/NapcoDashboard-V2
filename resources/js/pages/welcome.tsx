@@ -36,14 +36,14 @@ export default function Welcome({
                                 >
                                     Log in
                                 </Link>
-                                {canRegister && (
+                                {/* {canRegister && (
                                     <Link
                                         href={register()}
                                         className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a]"
                                     >
                                         Register
                                     </Link>
-                                )}
+                                )} */}
                             </>
                         )}
                     </nav>
