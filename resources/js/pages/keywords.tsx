@@ -5,6 +5,7 @@ import AppLayout from "@/layouts/app-layout";
 import { type BreadcrumbItem } from "@/types";
 import { Head } from "@inertiajs/react";
 import { flexRender } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge"
 import {
     Table,
     TableBody,
@@ -85,39 +86,60 @@ export default function Keyword({ keywordData }: KeywordProps) {
 
     const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
 
-    const columns = Object.keys(columnNames).map((key) =>
-        columnHelper.accessor((row) => row.data[key], {
-            id: key,
-            header: columnNames[key],
-            cell: (info) => {
-                const value = info.getValue();
+ const columns = Object.keys(columnNames).map((key) =>
+  columnHelper.accessor((row) => row.data[key], {
+    id: key,
+    header: columnNames[key],
+    cell: (info) => {
+      const value = info.getValue();
 
-                if (key === "average_roas") {
-                    const bgColor = value && value > 0 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-700";
-                    return (
-                        <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
-                            {value && value > 0 ? Number(value).toFixed(2) + "%" : "0%"}
-                        </div>
-                    );
-                }
+      // Do NOT apply badge on keyword_name
+      if (key === "keyword_name") return value ?? "-";
 
-                if (key === "category") {
-                    const bgColor = getCategoryColor(value);
-                    return (
-                        <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
-                            {value ?? "-"}
-                        </div>
-                    );
-                }
+      // Average ROAS with original color logic
+      if (key === "average_roas") {
+        const bgColor = value && value > 0 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-700";
+        return (
+          <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
+            {value && value > 0 ? Number(value).toFixed(2) + "%" : "0%"}
+          </div>
+        );
+      }
 
-                if (key === "total_revenue" || key === "avg_cpc") return value ? Number(value).toFixed(2) + " KWD" : "0 KWD";
-                if (key === "ctr") return value ?? "0%";
-                if (["total_clicks", "orders", "impressions", "campaigns", "product_count"].includes(key)) return value ?? 0;
+      // Category with original color logic
+      if (key === "category") {
+        const bgColor = getCategoryColor(value);
+        return (
+          <div className={`px-2 py-1 rounded text-center ${bgColor}`}>
+            {value ?? "-"}
+          </div>
+        );
+      }
 
-                return value ?? "-";
-            },
-        })
-    );
+      // All other fields (numeric, date, etc.) wrapped in outline badge
+      const displayValue =
+        key === "total_revenue" || key === "avg_cpc"
+          ? value
+            ? Number(value).toFixed(2) + " KWD"
+            : "0 KWD"
+          : key === "ctr"
+          ? value ?? "0%"
+          : ["total_clicks", "orders", "impressions", "campaigns", "product_count"].includes(key)
+          ? value ?? 0
+          : key === "campaign_start_date" || key === "campaign_end_date"
+          ? value
+            ? new Date(value).toLocaleDateString()
+            : "-"
+          : value ?? "-";
+
+      return (
+        <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+          {displayValue}
+        </Badge>
+      );
+    },
+  })
+);
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -139,7 +161,7 @@ export default function Keyword({ keywordData }: KeywordProps) {
 
             if (filterType === "month" && selectedMonth) {
                 return start.getMonth() === selectedMonth.getMonth() &&
-                       start.getFullYear() === selectedMonth.getFullYear();
+                    start.getFullYear() === selectedMonth.getFullYear();
             }
 
             if (filterType === "range" && selectedRange?.from && selectedRange?.to) {

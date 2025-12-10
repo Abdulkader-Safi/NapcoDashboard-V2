@@ -5,6 +5,7 @@ import AppLayout from "@/layouts/app-layout";
 import { type BreadcrumbItem } from "@/types";
 import { Head } from "@inertiajs/react";
 import { flexRender } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -91,27 +92,67 @@ export default function Product({ productData }: ProductProps) {
 
   const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
 
-  const columns = Object.keys(columnNames).map((key) =>
-    columnHelper.accessor((row) => row.data[key], {
-      id: key,
-      header: columnNames[key],
-      cell: (info) => {
-        const value = info.getValue();
-        if (key === "average_roas") {
-          const bgColor = value && value > 0 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-700";
-          return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value && value > 0 ? Number(value).toFixed(2) + "%" : "0%"}</div>;
-        }
-        if (key === "category") {
-          const bgColor = getCategoryColor(value);
-          return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value ?? "-"}</div>;
-        }
-        if (key === "total_revenue") return value ? Number(value).toFixed(2) + " KWD" : "0 KWD";
-        if (["total_clicks", "orders", "campaigns"].includes(key)) return value ?? 0;
-        if (key === "campaign_start_date" || key === "campaign_end_date") return value ? new Date(value).toLocaleDateString() : "-";
+const columns = Object.keys(columnNames).map((key) =>
+  columnHelper.accessor((row) => row.data[key], {
+    id: key,
+    header: columnNames[key],
+    cell: (info) => {
+      const value = info.getValue();
+
+      // Keep product_name as plain text
+      if (key === "product_name") {
         return value ?? "-";
-      },
-    })
-  );
+      }
+
+      // Average ROAS with original color logic
+      if (key === "average_roas") {
+        const bgColor = value && value > 0 ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-700";
+        return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value && value > 0 ? Number(value).toFixed(2) + "%" : "0%"}</div>;
+      }
+
+      // Category with original color logic
+      if (key === "category") {
+        const bgColor = getCategoryColor(value);
+        return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value ?? "-"}</div>;
+      }
+
+      // Total Revenue
+      if (key === "total_revenue") {
+        return (
+          <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+            {value ? Number(value).toFixed(2) + " KWD" : "0 KWD"}
+          </Badge>
+        );
+      }
+
+      // Total Clicks, Orders, Campaigns
+      if (["total_clicks", "orders", "campaigns"].includes(key)) {
+        return (
+          <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+            {value ?? 0}
+          </Badge>
+        );
+      }
+
+      // Campaign Start/End Date
+      if (key === "campaign_start_date" || key === "campaign_end_date") {
+        return (
+          <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+            {value ? new Date(value).toLocaleDateString() : "-"}
+          </Badge>
+        );
+      }
+
+      // Default for any other field
+      return (
+        <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+          {value ?? "-"}
+        </Badge>
+      );
+    },
+  })
+);
+
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -136,7 +177,7 @@ export default function Product({ productData }: ProductProps) {
       // Month filter
       if (filterType === "month" && selectedMonth) {
         return start.getMonth() === selectedMonth.getMonth() &&
-               start.getFullYear() === selectedMonth.getFullYear();
+          start.getFullYear() === selectedMonth.getFullYear();
       }
 
       // Range filter
