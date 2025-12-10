@@ -9,8 +9,10 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return redirect()->route('login');
-});
+    return Inertia::render('welcome', [
+        'canRegister' => Features::enabled(Features::registration()),
+    ]);
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
@@ -27,7 +29,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/products', [ProductController::class, 'index'])->name('product.index');
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
-  
 });
 
 require __DIR__ . '/settings.php';
