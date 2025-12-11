@@ -36,14 +36,14 @@ class ProductController extends Controller
                     ],
                 ];
             }
-            $campaignCount = $performances->pluck('campaign.campaign_name')->filter()->unique()->values()->all();
+            // $campaignCount = $performances->pluck('campaign.campaign_name')->filter()->unique()->values()->all();
 
             // Aggregated metrics
             $totalRevenue = $performances->sum('sales_revenue');
             $totalClicks  = $performances->sum('clicks');
             $totalOrders  = $performances->sum('orders');
             $averageRoas  = $performances->avg('roas');
-            // $campaignCount = $performances->groupBy('campaign_id')->count();
+            $campaignCount = $performances->groupBy('campaign_id');
 
             // All categories used by this product
             $categories = $performances->pluck('category.category_name')->filter()->unique()->values()->all();
@@ -83,17 +83,48 @@ class ProductController extends Controller
 
     public function campaign($id)
     {
-        $performances = Product::with('adPerformances.campaign')->where('product_id', $id)->first();
+        // Load the product with its ad performances and campaigns
+        $product = Product::with('adPerformances.campaign', 'adPerformances.category')
+            ->where('product_id', $id)
+            ->firstOrFail();
 
-        $products = $performances->adPerformances
-            ->pluck('campaign.campaign_name')
-            ->filter()
-            ->unique()
-            ->values();
-            
+        // Group ad performances by campaign
+        $campaigns = $product->adPerformances
+            ->filter(fn($ap) => $ap->campaign)  // remove performances with no campaign
+            ->groupBy(fn($ap) => $ap->campaign->campaign_id)
+            ->map(function ($performances, $campaignId) {
+                $campaign = $performances->first()->campaign;
+
+                $totalRevenue = $performances->sum('sales_revenue');
+                $totalClicks  = $performances->sum('clicks');
+                $totalOrders  = $performances->sum('orders');
+                $averageRoas  = $performances->avg('roas');
+
+                $categories = $performances->pluck('category.category_name')->filter()->unique()->values()->all();
+                $categoryDisplay = count($categories) ? implode(', ', $categories) : '-';
+
+                $averageCtr = $performances->avg('ctr') ? round($performances->avg('ctr'), 2) . '%' : '0%';
+                $averageCvr = $performances->avg('cvr') ? round($performances->avg('cvr'), 2) . '%' : '0%';
+
+                return [
+                    'campaign_id' => $campaign->campaign_id,
+                    'campaign_name' => $campaign->campaign_name,
+                    'campaign_start_date' => $campaign->campaign_start_date,
+                    'campaign_end_date' => $campaign->campaign_end_date,
+                    'category' => $categoryDisplay,
+                    'total_revenue' => $totalRevenue ? number_format($totalRevenue, 2) : 0,
+                    'total_clicks' => $totalClicks,
+                    'orders' => $totalOrders,
+                    'average_roas' => $averageRoas ? round($averageRoas, 2) : 0,
+                    'ctr' => $averageCtr,
+                    'cvr' => $averageCvr,
+                ];
+            })
+            ->values(); // reindex collection
+
         return Inertia::render('campaign_detail', [
-            'campaignName' => $performances->product_name,
-            'products' => $products,
+            'productName' => $product->product_name,
+            'campaigns' => $campaigns,
         ]);
     }
 }
