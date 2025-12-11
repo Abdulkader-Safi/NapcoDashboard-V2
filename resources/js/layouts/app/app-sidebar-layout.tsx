@@ -7,15 +7,30 @@ import { AppSidebarHeader } from "@/components/app-sidebar-header";
 import { type BreadcrumbItem } from "@/types";
 import { type PropsWithChildren } from "react";
 
+interface AppSidebarLayoutProps {
+  breadcrumbs?: BreadcrumbItem[];
+  headerProps?: {
+    categories?: string[];
+    hideGlobalFilter?: boolean;
+    showCategoryFilter?: boolean;
+  };
+}
+
 export default function AppSidebarLayout({
   children,
   breadcrumbs = [],
-}: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+  headerProps,
+}: PropsWithChildren<AppSidebarLayoutProps>) {
   return (
     <AppShell variant="sidebar">
       <AppSidebar />
       <AppContent variant="sidebar" className="overflow-x-hidden">
-        <AppSidebarHeader breadcrumbs={breadcrumbs} />
+        <AppSidebarHeader
+          breadcrumbs={breadcrumbs}
+          categories={headerProps?.categories}
+          hideGlobalFilter={headerProps?.hideGlobalFilter}
+          showCategoryFilter={headerProps?.showCategoryFilter}
+        />
         {children}
       </AppContent>
     </AppShell>
