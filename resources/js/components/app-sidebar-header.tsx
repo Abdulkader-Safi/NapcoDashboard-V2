@@ -18,7 +18,22 @@ interface AppSidebarHeaderProps {
 }
 
 export function AppSidebarHeader({ breadcrumbs = [], categories, hideGlobalFilter, showCategoryFilter }: AppSidebarHeaderProps) {
-  const { filterType, setFilterType, selectedDate, setSelectedDate, selectedMonth, setSelectedMonth, selectedRange, setSelectedRange, selectedCategory, setSelectedCategory } = useFilter();
+  const filter = useFilter(); // may be null if no provider
+
+  // Provide safe defaults if FilterProvider is missing
+  const filterType = filter?.filterType ?? "all";
+  const setFilterType = filter?.setFilterType ?? (() => { });
+  const selectedDate = filter?.selectedDate;
+  const setSelectedDate = filter?.setSelectedDate ?? (() => { });
+  const selectedMonth = filter?.selectedMonth;
+  const setSelectedMonth = filter?.setSelectedMonth ?? (() => { });
+  const selectedRange = filter?.selectedRange;
+  const setSelectedRange = filter?.setSelectedRange ?? (() => { });
+  const selectedCategory = filter?.selectedCategory;
+  const setSelectedCategory = filter?.setSelectedCategory ?? (() => { });
+
+  // If filter provider is missing, optionally hide filter row
+  const showFilters = Boolean(filter);
 
   const [dayOpen, setDayOpen] = useState(false);
   const [monthOpen, setMonthOpen] = useState(false);
@@ -71,41 +86,42 @@ export function AppSidebarHeader({ breadcrumbs = [], categories, hideGlobalFilte
         <SidebarTrigger className="-ml-1" />
         <Breadcrumbs breadcrumbs={breadcrumbs} />
 
-        {/* --- Only one filter row --- */}
-        <div className="flex items-center gap-8 mt-2 mb-3">
-          {/* Filter Type */}
-          <div className="w-36">
-            <Select value={filterType} onValueChange={(value) => setFilterType(value as FilterType)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="range">Range</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category Filter */}
-          {categories && categories.length > 0 && showCategoryFilter && (
+        {/* Only render filter row if provider exists */}
+        {showFilters && (
+          <div className="flex items-center gap-8 mt-2 mb-3">
+            {/* Filter Type */}
             <div className="w-36">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select value={filterType} onValueChange={(value) => setFilterType(value as FilterType)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="Select Filter" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="day">Day</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="range">Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {/* Day Filter */}
+            {/* Category Filter */}
+            {categories && categories.length > 0 && showCategoryFilter && (
+              <div className="w-36">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+                    {/* Day Filter */}
           {filterType === "day" && !hideGlobalFilter && (
             <Popover open={dayOpen} onOpenChange={setDayOpen}>
               <PopoverTrigger asChild>
@@ -154,13 +170,15 @@ export function AppSidebarHeader({ breadcrumbs = [], categories, hideGlobalFilte
                 />
                 <div className="mt-2 flex justify-between">
                   <Button size="sm" variant="outline" onClick={() => setSelectedRange(undefined, true)}>Reset</Button>
-                </div>
-              </PopoverContent>
+          </div>
+             </PopoverContent>
             </Popover>
-          )}
+        )}
         </div>
+        )}
       </div>
     </header>
   );
 }
+
 

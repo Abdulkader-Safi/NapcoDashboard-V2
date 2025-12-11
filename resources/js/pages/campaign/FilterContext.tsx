@@ -155,8 +155,18 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useFilter() {
+// export function useFilter() {
+//   const context = useContext(FilterContext);
+//   if (!context) throw new Error("useFilter must be used within a FilterProvider");
+//   return context;
+// }
+
+
+export function useFilter(): FilterContextType | null {
   const context = useContext(FilterContext);
-  if (!context) throw new Error("useFilter must be used within a FilterProvider");
+  if (!context) {
+    // Instead of throwing, return null
+    return null;
+  }
   return context;
 }

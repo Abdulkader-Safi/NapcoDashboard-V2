@@ -21,11 +21,9 @@ class CampaignController extends Controller
 {
     public function index()
     {
-        // Load campaigns with ad performances + products
-        $campaigns = Campaign::with([
-            'adPerformances.product',
-            'adPerformances.category',
-        ])->latest()->get();
+        $campaigns = Campaign::with(['adPerformances.product', 'adPerformances.category'])
+            ->latest()
+            ->get();
 
         $campaignData = $campaigns->map(function ($campaign) {
             $performances = $campaign->adPerformances;
@@ -42,6 +40,7 @@ class CampaignController extends Controller
                         'sales_revenue' => 0,
                         'clicks' => 0,
                         'orders' => 0,
+                        'products' => [],
                     ],
                 ];
             }
@@ -51,8 +50,17 @@ class CampaignController extends Controller
             $totalOrders  = $performances->sum('orders');
             $averageRoas  = $performances->avg('roas');
 
-            // Count of unique products in this campaign
+            // Count of unique products
             $productCount = $performances->pluck('product.product_name')->filter()->unique()->count();
+
+            $productList = $performances->map(fn($perf) => $perf->product)
+                ->filter()
+                ->unique('product_id')
+                ->map(fn($prod) => [
+                    'id' => $prod->product_id ?? $prod->id,
+                    'product_name' => $prod->product_name,
+                ])
+                ->values();
 
             return [
                 'id' => $campaign->campaign_id,
@@ -65,12 +73,29 @@ class CampaignController extends Controller
                     'sales_revenue' => $totalRevenue ? number_format($totalRevenue, 2) : 0,
                     'clicks' => $totalClicks,
                     'orders' => $totalOrders,
+                    'products' => $productList,
                 ],
             ];
         });
 
         return Inertia::render('campaign/index', [
             'campaignData' => $campaignData,
+        ]);
+    }
+
+    public function products($id)
+    {
+        $performances = Campaign::with('adPerformances.product')->where('campaign_id', $id)->first();
+
+        $products = $performances->adPerformances
+            ->pluck('product.product_name')
+            ->filter()
+            ->unique()
+            ->values();
+        // dd($products);
+        return Inertia::render('product_detail', [
+            'campaignName' => $performances->campaign_name,
+            'products' => $products,
         ]);
     }
 

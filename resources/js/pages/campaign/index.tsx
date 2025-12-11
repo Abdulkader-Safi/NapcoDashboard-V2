@@ -29,7 +29,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface CampaignProps {
-  campaignData: { id: string; file_name?: string; data: Record<string, any> }[];
+  campaignData: {
+    id: string;
+    file_name?: string;
+    data: Record<string, any>;
+    products?: { id: string; product_name: string }[];
+  }[];
   updatedCampaigns?: Record<string, string>;
 }
 
@@ -43,6 +48,7 @@ export default function CampaignPageWrapper(props: CampaignProps) {
 
 function Campaign({ campaignData, updatedCampaigns }: CampaignProps) {
   const { filterType, selectedDate, selectedMonth, selectedRange } = useFilter();
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const columnNames: Record<string, string> = {
     campaign_name: "Campaign Name",
@@ -55,19 +61,33 @@ function Campaign({ campaignData, updatedCampaigns }: CampaignProps) {
     orders: "Orders",
   };
 
-  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
+  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any>; products?: any }>();
   const columns = Object.keys(columnNames).map((key) =>
     columnHelper.accessor((row) => row.data[key], {
       id: key,
       header: columnNames[key],
       cell: (info) => {
         const value = info.getValue();
+        const row = info.row.original;
+
         if (key === "campaign_name") return value ?? "-";
 
-        if (key === "product_count" || key === "sales_revenue") {
+        if (key === "product_count") {
+          return (
+            <Link
+              href={campaign.products.url(row.id)}
+              className="text-blue-600 hover:underline"
+            >
+              <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+                {value ?? 0}
+              </Badge>
+            </Link>
+          );
+        }
+        if (key === "sales_revenue") {
           return (
             <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
-              {value ?? 0} {key === "sales_revenue" ? "KWD" : ""}
+              {value ?? 0} KWD
             </Badge>
           );
         }
@@ -85,8 +105,6 @@ function Campaign({ campaignData, updatedCampaigns }: CampaignProps) {
       },
     })
   );
-
-  const [sorting, setSorting] = useState<SortingState>([]);
 
   const filteredData = useMemo(() => {
     if (!campaignData) return [];
