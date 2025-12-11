@@ -26,11 +26,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/campaign', [CampaignController::class, 'index'])->name('campaign.index');
     Route::get('/campaign/upload', [CampaignController::class, 'upload'])->name('campaign.upload'); // GET page
     Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store'); // POST upload
+    Route::get('/campaign/{campaign}/products', [CampaignController::class, 'products'])->name('campaign.products');
 
     Route::get('/products', [ProductController::class, 'index'])->name('product.index');
-    Route::get('/campaign/{campaign}/products', [CampaignController::class, 'products'])->name('campaign.products');
+    Route::get('/products/{products}/campaign', [ProductController::class, 'campaign'])->name('products.campaign');
+
     
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
+    Route::get('/keywords/{keywords}/products', [KeywordController::class, 'products'])->name('keywords.products');
+
 });
 
 require __DIR__ . '/settings.php';

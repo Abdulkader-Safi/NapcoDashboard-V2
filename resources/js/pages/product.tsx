@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import AppLayout from "@/layouts/app-layout"; // your wrapper around AppLayoutTemplate
 import { type BreadcrumbItem } from "@/types";
-import { Head } from "@inertiajs/react";
+import { Link, Head } from "@inertiajs/react";
 import { flexRender } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import products from "@/routes/product";
+
 import {
   Table,
   TableBody,
@@ -28,6 +30,7 @@ interface ProductProps {
     data: Record<string, any>;
     campaign_start_date?: string;
     campaign_end_date?: string;
+    campaign?: { id: string; campaign_name: string }[];
   }[];
 }
 
@@ -81,13 +84,14 @@ function ProductPage({ productData }: ProductProps) {
     campaign_end_date: "End Date",
   };
 
-  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
+  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any>; campaign?: any }>();
   const columns = Object.keys(columnNames).map((key) =>
     columnHelper.accessor((row) => row.data[key], {
       id: key,
       header: columnNames[key],
       cell: (info) => {
         const value = info.getValue();
+        const row = info.row.original;
 
         if (key === "product_name") return value ?? "-";
 
@@ -99,6 +103,18 @@ function ProductPage({ productData }: ProductProps) {
         if (key === "category") {
           const bgColor = getCategoryColor(value);
           return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value ?? "-"}</div>;
+        }
+
+        if (key === "campaigns") {
+          const href = row.id ? `/products/${row.id}/campaign` : "#";
+
+          return (
+            <Link href={row.id != null ? href : "#"} className="text-blue-600 hover:underline">
+              <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+                {value ?? 0}
+              </Badge>
+            </Link>
+          );
         }
 
         if (key === "total_revenue") {

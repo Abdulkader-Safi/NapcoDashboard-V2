@@ -36,13 +36,14 @@ class ProductController extends Controller
                     ],
                 ];
             }
+            $campaignCount = $performances->pluck('campaign.campaign_name')->filter()->unique()->values()->all();
 
             // Aggregated metrics
             $totalRevenue = $performances->sum('sales_revenue');
             $totalClicks  = $performances->sum('clicks');
             $totalOrders  = $performances->sum('orders');
             $averageRoas  = $performances->avg('roas');
-            $campaignCount = $performances->groupBy('campaign_id')->count();
+            // $campaignCount = $performances->groupBy('campaign_id')->count();
 
             // All categories used by this product
             $categories = $performances->pluck('category.category_name')->filter()->unique()->values()->all();
@@ -61,7 +62,7 @@ class ProductController extends Controller
                 'data' => [
                     'product_name' => $product->product_name,
                     'category' => $categoryDisplay,
-                    'campaigns' => $campaignCount,
+                    'campaigns' => count($campaignCount),
                     'average_roas' => $averageRoas ? round($averageRoas, 2) : 0,
                     'total_revenue' => $totalRevenue ? number_format($totalRevenue, 2) : 0,
                     'total_clicks' => $totalClicks,
@@ -77,6 +78,22 @@ class ProductController extends Controller
         // Return to Inertia view
         return Inertia::render('product', [
             'productData' => $productData,
+        ]);
+    }
+
+    public function campaign($id)
+    {
+        $performances = Product::with('adPerformances.campaign')->where('product_id', $id)->first();
+
+        $products = $performances->adPerformances
+            ->pluck('campaign.campaign_name')
+            ->filter()
+            ->unique()
+            ->values();
+            
+        return Inertia::render('campaign_detail', [
+            'campaignName' => $performances->product_name,
+            'products' => $products,
         ]);
     }
 }

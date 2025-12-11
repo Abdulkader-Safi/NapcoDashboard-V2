@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Head } from "@inertiajs/react";
+import { Link, Head } from "@inertiajs/react";
 import { flexRender } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import keywords from "@/routes/keywords";
+
 import {
   Table,
   TableBody,
@@ -33,6 +35,7 @@ interface KeywordProps {
     data: Record<string, any>;
     campaign_start_date?: string;
     campaign_end_date?: string;
+    products?: { id: string; product_name: string }[];
   }[];
 }
 
@@ -82,7 +85,7 @@ function KeywordPage({ keywordData }: KeywordProps) {
     campaign_end_date: "End Date",
   };
 
-  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any> }>();
+  const columnHelper = createColumnHelper<{ id: string; data: Record<string, any>; products?: any }>();
 
   const columns = Object.keys(columnNames).map((key) =>
     columnHelper.accessor((row) => row.data[key], {
@@ -90,6 +93,7 @@ function KeywordPage({ keywordData }: KeywordProps) {
       header: columnNames[key],
       cell: (info) => {
         const value = info.getValue();
+        const row = info.row.original;
 
         if (key === "keyword_name") return value ?? "-";
 
@@ -101,6 +105,21 @@ function KeywordPage({ keywordData }: KeywordProps) {
         if (key === "category") {
           const bgColor = getCategoryColor(value);
           return <div className={`px-2 py-1 rounded text-center ${bgColor}`}>{value ?? "-"}</div>;
+        }
+
+        if (key === "product_count") {
+          return (
+
+            <Link
+              href={row.id != null ? keywords.products.url(row.id) : "#"}
+              className="text-blue-600 hover:underline"
+            >
+
+              <Badge variant="outline" className="border border-gray-400 text-gray-700 px-2 py-1 rounded">
+                {value ?? 0}
+              </Badge>
+            </Link>
+          );
         }
 
         // All other fields wrapped in Badge

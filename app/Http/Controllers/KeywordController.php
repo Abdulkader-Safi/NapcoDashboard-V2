@@ -13,7 +13,6 @@ class KeywordController extends Controller
     {
         // Load keywords with ad performances, campaigns, and categories
         $keywords = Keyword::with(['adPerformances.campaign', 'adPerformances.category', 'adPerformances.product'])->get();
-
         $keywordData = $keywords->map(function ($keyword) {
 
             $performances = $keyword->adPerformances;
@@ -62,7 +61,7 @@ class KeywordController extends Controller
             $endDate   = $performances->max(fn($p) => $p->campaign->campaign_end_date ?? null);
 
             return [
-                'id' => $keyword->id,
+                'id' => $keyword->keyword_id,
                 'data' => [
                     'keyword_name' => $keyword->keyword,
                     'category' => $categoryDisplay,
@@ -84,6 +83,22 @@ class KeywordController extends Controller
 
         return Inertia::render('keywords', [
             'keywordData' => $keywordData,
+        ]);
+    }
+
+    public function products($id)
+    {
+        $performances = keyword::with('adPerformances.product')->where('keyword_id', $id)->first();
+
+        $products = $performances->adPerformances
+            ->pluck('product.product_name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return Inertia::render('keyword_detail', [
+            'keywordName' => $performances->keyword,
+            'products' => $products,
         ]);
     }
 }
