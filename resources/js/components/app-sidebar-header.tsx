@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useFilter, FilterType } from "@/pages/campaign/FilterContext";
-import { useState } from "react";
 import { type BreadcrumbItem as BreadcrumbItemType } from "@/types";
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
@@ -22,14 +22,35 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     setSelectedRange,
   } = useFilter();
 
-  // Month picker component
-  const MonthPicker = ({
-    selectedMonth,
-    onSelect,
-  }: {
-    selectedMonth?: Date;
-    onSelect: (date: Date) => void;
-  }) => {
+  const [dayOpen, setDayOpen] = useState(false);
+  const [monthOpen, setMonthOpen] = useState(false);
+  const [rangeOpen, setRangeOpen] = useState(false);
+
+  const [displayDate, setDisplayDate] = useState("Select Date");
+  const [displayMonth, setDisplayMonth] = useState("Select Month");
+  const [displayRange, setDisplayRange] = useState("Select Range");
+
+  // Update display whenever context changes
+  useEffect(() => {
+    setDisplayDate(selectedDate ? selectedDate.toDateString() : "Select Date");
+    setDisplayMonth(
+      selectedMonth ? selectedMonth.toLocaleString("default", { month: "long", year: "numeric" }) : "Select Month"
+    );
+    setDisplayRange(
+      selectedRange?.from && selectedRange?.to
+        ? `${selectedRange.from.toLocaleDateString()} - ${selectedRange.to.toLocaleDateString()}`
+        : "Select Range"
+    );
+  }, [selectedDate, selectedMonth, selectedRange]);
+
+  // Reset other filters when selecting a new type
+  const resetOtherFilters = (keep: "day" | "month" | "range") => {
+    if (keep !== "day") setSelectedDate(undefined, false);
+    if (keep !== "month") setSelectedMonth(undefined, false);
+    if (keep !== "range") setSelectedRange(undefined, false);
+  };
+
+  const MonthPicker = ({ selectedMonth, onSelect }: { selectedMonth?: Date; onSelect: (date: Date) => void }) => {
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
     const [year, setYear] = useState(selectedMonth?.getFullYear() || currentYear);
@@ -40,35 +61,35 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
     ];
 
     return (
-      <div className="p-3 w-64">
+      <div className="p-3 w-64 bg-white rounded shadow-md">
         <select
           className="w-full mb-3 border rounded p-2"
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
         >
-          {years.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
+          {years.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
-        <div className="grid grid-cols-3 gap-2">
-          {months.map((month, index) => {
-            const date = new Date(year, index, 1);
-            const today = new Date();
-            const disabled = date.getFullYear() > today.getFullYear() ||
-              (date.getFullYear() === today.getFullYear() && index > today.getMonth());
+  <div className="grid grid-cols-3 gap-2">
+  {months.map((month, index) => {
+    const date = new Date(year, index, 1);
+    const isSelected = selectedMonth?.getFullYear() === year && selectedMonth?.getMonth() === index;
 
-            return (
-              <Button
-                key={month}
-                disabled={disabled}
-                onClick={() => !disabled && onSelect(date)}
-                className={`p-2 text-sm rounded border ${disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "hover:bg-blue-600 hover:text-white"} ${selectedMonth?.getFullYear() === year && selectedMonth.getMonth() === index ? "bg-blue-700 text-white" : ""}`}
-              >
-                {month}
-              </Button>
-            );
-          })}
-        </div>
+    return (
+      <Button
+        key={month}
+        onClick={() => onSelect(date)}
+        className={`w-full rounded border text-sm text-center px-3 py-2 truncate
+          ${isSelected 
+            ? "bg-blue-100 text-blue-700 border-blue-300" 
+            : "bg-white text-gray-800 border-gray-300 hover:bg-blue-50 hover:text-blue-700"
+          }`}
+      >
+        {month}
+      </Button>
+    );
+  })}
+</div>
+
       </div>
     );
   };
@@ -97,18 +118,20 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
           {/* Day Filter */}
           {filterType === "day" && (
-            <Popover>
+            <Popover open={dayOpen} onOpenChange={setDayOpen}>
               <PopoverTrigger asChild>
-                <Button className="w-40">
-                  {selectedDate ? selectedDate.toDateString() : "Select Date"}
-                </Button>
+                <Button className="w-40">{displayDate}</Button>
               </PopoverTrigger>
               <PopoverContent>
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  disabled={(date) => date > new Date()}
+                  onSelect={(date) => {
+                    resetOtherFilters("day");
+                    setSelectedDate(date, true);
+                    setDayOpen(false);
+                  }}
+                  disabled={(d) => d > new Date()}
                 />
               </PopoverContent>
             </Popover>
@@ -116,18 +139,18 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
           {/* Month Filter */}
           {filterType === "month" && (
-            <Popover>
+            <Popover open={monthOpen} onOpenChange={setMonthOpen}>
               <PopoverTrigger asChild>
-                <Button className="w-48">
-                  {selectedMonth
-                    ? selectedMonth.toLocaleString("default", { month: "long", year: "numeric" })
-                    : "Select Month"}
-                </Button>
+                <Button className="w-48 border rounded">{displayMonth}</Button>
               </PopoverTrigger>
               <PopoverContent>
                 <MonthPicker
                   selectedMonth={selectedMonth}
-                  onSelect={(date) => setSelectedMonth(date)}
+                  onSelect={(date) => {
+                    resetOtherFilters("month");
+                    setSelectedMonth(date, true);
+                    setMonthOpen(false);
+                  }}
                 />
               </PopoverContent>
             </Popover>
@@ -135,23 +158,27 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
 
           {/* Range Filter */}
           {filterType === "range" && (
-            <Popover>
+            <Popover open={rangeOpen} onOpenChange={setRangeOpen}>
               <PopoverTrigger asChild>
-                <Button className="w-60">
-                  {selectedRange?.from && selectedRange?.to
-                    ? `${selectedRange.from.toLocaleDateString()} - ${selectedRange.to.toLocaleDateString()}`
-                    : "Select Range"}
-                </Button>
+                <Button className="w-60">{displayRange}</Button>
               </PopoverTrigger>
-              <PopoverContent>
+              <PopoverContent className="w-[700px] max-w-full p-4 overflow-x-auto">
                 <Calendar
                   mode="range"
                   selected={selectedRange}
-                  onSelect={(range) => setSelectedRange(range)}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      resetOtherFilters("range");
+                      setSelectedRange(range, true);
+                    }
+                  }}
                   numberOfMonths={2}
-                  disabled={(date) => date > new Date()}
-                  className="rounded-lg border shadow-sm"
+                  className="w-full"
+                  disabled={(d) => d > new Date()}
                 />
+                <div className="mt-2 flex justify-between">
+                  <Button size="sm" variant="outline" onClick={() => setSelectedRange(undefined, true)}>Reset</Button>
+                </div>
               </PopoverContent>
             </Popover>
           )}

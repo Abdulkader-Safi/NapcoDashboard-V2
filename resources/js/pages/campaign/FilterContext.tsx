@@ -1,8 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { DateRange } from "react-day-picker";
-import { router } from "@inertiajs/core";
 
 export type FilterType = "all" | "day" | "month" | "range";
 
@@ -20,63 +19,109 @@ interface FilterContextType {
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export function FilterProvider({ children }: { children: ReactNode }) {
-  const searchParams = new URLSearchParams(window.location.search);
+  const [filterType, setFilterTypeState] = useState<FilterType>("all");
+  const [selectedDate, setSelectedDateState] = useState<Date>();
+  const [selectedMonth, setSelectedMonthState] = useState<Date>();
+  const [selectedRange, setSelectedRangeState] = useState<DateRange>();
 
-  const [filterType, setFilterTypeState] = useState<FilterType>(
-    (searchParams.get("filter") as FilterType) || "all"
-  );
-  const [selectedDate, setSelectedDateState] = useState<Date | undefined>(
-    searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined
-  );
-  const [selectedMonth, setSelectedMonthState] = useState<Date | undefined>(
-    searchParams.get("month") ? new Date(searchParams.get("month")!) : undefined
-  );
-  const [selectedRange, setSelectedRangeState] = useState<DateRange | undefined>(
-    searchParams.get("from") && searchParams.get("to")
-      ? { from: new Date(searchParams.get("from")!), to: new Date(searchParams.get("to")!) }
-      : undefined
-  );
+  // On mount, read URL params
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const f = searchParams.get("filter") as FilterType;
+    setFilterTypeState(f || "all");
+
+    const dateParam = searchParams.get("date");
+    if (dateParam) setSelectedDateState(new Date(dateParam));
+
+    const monthParam = searchParams.get("month");
+    if (monthParam) {
+      const [y, m] = monthParam.split("-");
+      setSelectedMonthState(new Date(Number(y), Number(m) - 1, 1)); // month is 0-based
+    }
+
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
+    if (fromParam && toParam)
+      setSelectedRangeState({ from: new Date(fromParam), to: new Date(toParam) });
+  }, []);
+
+  // Format date as YYYY-MM-DD
+  const formatDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0"); // month correct
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  // Format month as YYYY-MM
+  const formatMonth = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0"); // month correct
+    return `${y}-${m}`;
+  };
 
   const updateUrl = (params: Record<string, string | undefined>) => {
     const url = new URL(window.location.href);
+
+    if (params.filter === "day") {
+      url.searchParams.delete("month");
+      url.searchParams.delete("from");
+      url.searchParams.delete("to");
+    } else if (params.filter === "month") {
+      url.searchParams.delete("date");
+      url.searchParams.delete("from");
+      url.searchParams.delete("to");
+    } else if (params.filter === "range") {
+      url.searchParams.delete("date");
+      url.searchParams.delete("month");
+    } else if (params.filter === "all") {
+      url.searchParams.delete("date");
+      url.searchParams.delete("month");
+      url.searchParams.delete("from");
+      url.searchParams.delete("to");
+    }
+
     Object.keys(params).forEach((key) => {
       if (params[key] !== undefined) url.searchParams.set(key, params[key]!);
       else url.searchParams.delete(key);
     });
 
-    router.replace(url.toString(), undefined, { preserveState: true, preserveScroll: true });
-
+    window.history.replaceState(null, "", url.toString());
   };
 
-  // --- FilterType setter ---
   const setFilterType = (val: FilterType, pushToUrl = true) => {
     setFilterTypeState(val);
     if (pushToUrl) updateUrl({ filter: val });
   };
 
-  // --- Date filter ---
   const setSelectedDate = (val?: Date, pushToUrl = true) => {
     setSelectedDateState(val);
-    if (val) setFilterTypeState("day"); // auto-set filterType to 'day'
-    if (pushToUrl) updateUrl({ date: val ? val.toISOString().split("T")[0] : undefined, filter: val ? "day" : undefined });
-  };
-
-  // --- Month filter ---
-  const setSelectedMonth = (val?: Date, pushToUrl = true) => {
-    setSelectedMonthState(val);
-    if (val) setFilterTypeState("month"); // auto-set filterType to 'month'
-    if (pushToUrl) updateUrl({ month: val ? val.toISOString().slice(0, 7) : undefined, filter: val ? "month" : undefined });
-  };
-
-  // --- Range filter ---
-  const setSelectedRange = (val?: DateRange, pushToUrl = true) => {
-    setSelectedRangeState(val);
-    if (val?.from && val?.to) setFilterTypeState("range"); // auto-set filterType to 'range'
+    if (val) setFilterTypeState("day");
     if (pushToUrl)
       updateUrl({
-        from: val?.from?.toISOString().split("T")[0],
-        to: val?.to?.toISOString().split("T")[0],
-        filter: val?.from && val?.to ? "range" : undefined,
+        date: val ? formatDate(val) : undefined,
+        filter: val ? "day" : "all",
+      });
+  };
+
+  const setSelectedMonth = (val?: Date, pushToUrl = true) => {
+    setSelectedMonthState(val);
+    if (val) setFilterTypeState("month");
+    if (pushToUrl)
+      updateUrl({
+        month: val ? formatMonth(val) : undefined,
+        filter: val ? "month" : "all",
+      });
+  };
+
+  const setSelectedRange = (val?: DateRange, pushToUrl = true) => {
+    setSelectedRangeState(val);
+    if (val?.from && val?.to) setFilterTypeState("range");
+    if (pushToUrl)
+      updateUrl({
+        from: val?.from ? formatDate(val.from) : undefined,
+        to: val?.to ? formatDate(val.to) : undefined,
+        filter: val?.from && val?.to ? "range" : "all",
       });
   };
 
